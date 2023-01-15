@@ -2,8 +2,9 @@ from django.urls import path
 
 from core.apps.users.views import PatientCreateAPIView, SpecialistCreateAPIView, UpdateUserAvatarView, \
     RetrieveOrUpdateSpecialistAPIView, RetrieveOrUpdatePatientAPIView, ListBloodTypeAPIView, \
-    ListMedicalTypeAPIView, ListSpecialistTypeAPIView, ListCollegesDegreesAPIView , AllSpecialList , RattingView , AppointmentWrite ,Appointmentview , Otpverify , AllPatient, login , chat ,palestineId , \
-        sendNotification , Comments , Fav , Fav_pk, Comments_pk , Appointment_pk , Recommendation , Notify , Notify_delete
+    ListMedicalTypeAPIView, ListSpecialistTypeAPIView, ListCollegesDegreesAPIView , AllSpecialList , RattingView , AppointmentWrite ,Appointmentview , Otpverify , AllPatient, login , chat ,\
+    sendNotification , Comments , Fav , Fav_pk, Comments_pk , Appointment_pk , Recommendation , Notify , Notify_delete
+# palestineId , \
 
 URLS = [
     path(r'patients', PatientCreateAPIView.as_view()),
@@ -26,7 +27,7 @@ URLS = [
     path(r'login/', login.as_view()),
     
     path(r'chat/', chat.as_view()),
-    path(r'palestineid/', palestineId.as_view()),
+    # path(r'palestineid/', palestineId.as_view()),
     path(r'sendnotification/', sendNotification.as_view()),
    
     path(r'comments/', Comments.as_view()),

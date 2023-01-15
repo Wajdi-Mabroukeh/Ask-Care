@@ -9,23 +9,18 @@ from core.apps.mixins import ReadWriteSerializerMixin
 from core.apps.users.constants import BloodType, MedicalType, SpecialistType, CollegesDegrees
 from core.apps.users.models import SpecialistProfile, PatientProfile
 from core.apps.users.serializers import UserAvatarSerializer, WriteSpecialistSerializer, \
-    ReadUserMiniInfoSerializer, ReadSpecialistSerializer, ReadPatientSerializer, WritePatientSerializer , ReadRatting ,WriteAppointmentSerializer , ReadAppointmentSerializer , ReadCommentSerializer  ,\
-        FavSerializer , NotificationSerializer
+    ReadUserMiniInfoSerializer, ReadSpecialistSerializer, ReadPatientSerializer, WritePatientSerializer, ReadRatting, \
+    WriteAppointmentSerializer, ReadAppointmentSerializer, ReadCommentSerializer, \
+    FavSerializer, NotificationSerializer
 
 from core.apps.users.models import *
 from rest_framework import status
 from django.core.exceptions import ObjectDoesNotExist
 
-
-
-#from django_filters.rest_framework import DjnagoFilterBackend
+# from django_filters.rest_framework import DjnagoFilterBackend
 
 # import django_filters
 import django_filters.rest_framework
-
-
-
-
 
 
 class ListBloodTypeAPIView(generics.ListAPIView):
@@ -76,9 +71,6 @@ class PatientCreateAPIView(generics.CreateAPIView):
     permission_classes = (AllowAny,)
     throttle_scope = 'sign-up'
     serializer_class = ReadUserMiniInfoSerializer
-    
-    
-
 
     def post(self, request, *args, **kwargs):
         user_data = request.data
@@ -98,8 +90,6 @@ class SpecialistCreateAPIView(generics.ListCreateAPIView):
     permission_classes = (AllowAny,)
     throttle_scope = 'sign-up'
     serializer_class = ReadUserMiniInfoSerializer
-
-
 
     def post(self, request, *args, **kwargs):
         user_data = request.data
@@ -129,7 +119,6 @@ class RetrieveOrUpdateSpecialistAPIView(ReadWriteSerializerMixin,
     read_serializer_class = ReadSpecialistSerializer
     write_serializer_class = WriteSpecialistSerializer
     permission_classes = (AllowAny,)
-    
 
     def get_object(self):
         return SpecialistProfile.objects.get(pk=self.kwargs.get('specialist_id'))
@@ -144,196 +133,181 @@ class RetrieveOrUpdatePatientAPIView(ReadWriteSerializerMixin,
     def get_object(self):
         return PatientProfile.objects.get(pk=self.kwargs.get('patient_id'))
 
+
 from rest_framework.filters import SearchFilter
 from rest_framework.filters import OrderingFilter
-
 
 
 ############new#############
 class AllSpecialList(generics.ListAPIView):
     queryset = SpecialistProfile.objects.all()
     serializer_class = ReadSpecialistSerializer
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
-    #filter_fields =('type')
-    filterset_fields = ['type' , 'user__email' ] #go to home or not 
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # filter_fields =('type')
+    filterset_fields = ['type', 'user__email']  # go to home or not
     search_fields = ['user__username']
     ordering_fields = ['user__username', 'user__email']
     ordering = ['user__username']
+
 
 class AllPatient(generics.ListAPIView):
     queryset = PatientProfile.objects.all()
     serializer_class = ReadPatientSerializer
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
-    #filter_fields =('type')
-    filterset_fields = ['user__email'] #go to home or not 
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
+    # filter_fields =('type')
+    filterset_fields = ['user__email']  # go to home or not
     search_fields = ['user__username']
     ordering_fields = ['user__username', 'user__email']
     ordering = ['user__username']
 
-class RattingView(generics.CreateAPIView) :
 
+class RattingView(generics.CreateAPIView):
     queryset = Ratting.objects.all()
     serializer_class = ReadRatting
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
-    filterset_fields = ['specialist__user__username'  ,'patient__user__username' ]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['specialist__user__username', 'patient__user__username']
 
 
+class AppointmentWrite(generics.CreateAPIView):
+    serializer_class = WriteAppointmentSerializer
+    queryset = Appointment.objects.all()
 
-class AppointmentWrite (generics.CreateAPIView):
 
-     serializer_class = WriteAppointmentSerializer
-     queryset = Appointment.objects.all()
+class Appointmentview(generics.ListAPIView):
+    serializer_class = ReadAppointmentSerializer
+    queryset = Appointment.objects.all()
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['specialist__id', 'specialist__user__username', 'specialist__user__email',
+                        'patient__user__username', 'date', 'patient__user__email', 'patient__id']
 
-class Appointmentview (generics.ListAPIView):
-
-     serializer_class = ReadAppointmentSerializer
-     queryset = Appointment.objects.all()
-     filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
-     filterset_fields = ['specialist__id',  'specialist__user__username','specialist__user__email','patient__user__username' , 'date', 'patient__user__email' ,'patient__id']
-
-     
 
 ############# otp verify #######
-class Otpverify(generics.CreateAPIView) : 
+class Otpverify(generics.CreateAPIView):
     serializer_class = ReadPatientSerializer
-    
+
     def post(self, request, *args, **kwargs):
         data = request.data
-        try : 
-            patient = PatientProfile.objects.get(user__email =data['email'])
+        try:
+            patient = PatientProfile.objects.get(user__email=data['email'])
         except ObjectDoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-  
 
         if patient.otp == data['otp']:
-                patient.user.is_active = True
-                patient.user.save()
+            patient.user.is_active = True
+            patient.user.save()
 
+            return Response(self.serializer_class(patient, many=False).data)
 
-                return Response(self.serializer_class(patient , many = False).data)
-            
-        else :
+        else:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
 
-
-
-    
-class login (generics.CreateAPIView):
+class login(generics.CreateAPIView):
 
     def post(self, request, *args, **kwargs):
         email = request.data['email']
         password = request.data['password']
 
-        user = UserComponent.login(email = email , password = password)
+        user = UserComponent.login(email=email, password=password)
         print('hello')
         return Response(user)
 
 
+class chat(generics.CreateAPIView):
 
-class chat (generics.CreateAPIView):
-
-    def post (self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         sender = request.data['sender']
         receiver = request.data['receiver']
         time = request.data['time']
         text = request.data['text']
 
-
-        UserComponent.chat(sender=sender , receiver=receiver , time=time , text=text)
+        UserComponent.chat(sender=sender, receiver=receiver, time=time, text=text)
 
         return Response('its sent !')
 
-class palestineId (generics.CreateAPIView):
 
-    def post (self, request, *args, **kwargs):
-        name = request.data['name']
-        id = request.data['id']
-        res = UserComponent.palestineid(name=name , ID=id)
-        return Response(res)
-
-
+# class palestineId (generics.CreateAPIView):
+#
+#     def post (self, request, *args, **kwargs):
+#         name = request.data['name']
+#         id = request.data['id']
+#         res = UserComponent.palestineid(name=name , ID=id)
+#         return Response(res)
 
 
 class sendNotification(generics.CreateAPIView):
-    def post (self, request, *args, **kwargs) :
+    def post(self, request, *args, **kwargs):
         token = request.data['token']
         msg = request.data['msg']
         tiltle = request.data['title']
         try:
             UserComponent.sendNotification(msg=msg, title=tiltle, token=token)
             return Response('ok')
-        except :
+        except:
             return Response('error')
 
 
-class Comments (generics.ListCreateAPIView):
+class Comments(generics.ListCreateAPIView):
     serializer_class = ReadCommentSerializer
     queryset = Comment.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
 
-    filterset_fields = ['created_at'] #go to home or not 
+    filterset_fields = ['created_at']  # go to home or not
     search_fields = ['user__username']
     ordering_fields = ['created_at']
     ordering = ['-created_at']
 
-    def post (self, request, *args, **kwargs) : 
+    def post(self, request, *args, **kwargs):
         user = request.data['user']
         text = request.data['text']
-        try :
-            user = User.objects.get(id = user)
-            comment = Comment(user = user , text = text) 
+        try:
+            user = User.objects.get(id=user)
+            comment = Comment(user=user, text=text)
             comment.save()
-        
-            return Response (ReadCommentSerializer(comment).data)
-        except :
-            return Response ('error')
+
+            return Response(ReadCommentSerializer(comment).data)
+        except:
+            return Response('error')
 
 
 class Fav(generics.ListCreateAPIView):
     serializer_class = FavSerializer
     queryset = Favorite.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
 
-    filterset_fields = ['patient__id'] #go to home or not 
+    filterset_fields = ['patient__id']  # go to home or not
     search_fields = ['patient__id']
 
-
-
-    def post(self, request, *args, **kwargs) :
-        try :
+    def post(self, request, *args, **kwargs):
+        try:
             patient = request.data['patient']
             special = request.data['special']
-            patient =PatientProfile.objects.get(id =patient)
-            special = SpecialistProfile.objects.get(id =special )
-        
-            fav = Favorite(patient = patient , specialist = special)
+            patient = PatientProfile.objects.get(id=patient)
+            special = SpecialistProfile.objects.get(id=special)
+
+            fav = Favorite(patient=patient, specialist=special)
             fav.save()
             return Response(FavSerializer(fav).data)
-        except :
-                return Response('error')
+        except:
+            return Response('error')
 
 
-
-class Fav_pk (generics.DestroyAPIView):
+class Fav_pk(generics.DestroyAPIView):
     serializer_class = FavSerializer
     queryset = Favorite.objects.all()
 
 
-class Comments_pk (generics.RetrieveUpdateDestroyAPIView):
-
+class Comments_pk(generics.RetrieveUpdateDestroyAPIView):
     queryset = Comment.objects.all()
     serializer_class = ReadCommentSerializer
 
 
-
-
-class Appointment_pk (generics.DestroyAPIView) :
-
+class Appointment_pk(generics.DestroyAPIView):
     queryset = Appointment.objects.all()
+
     def delete(self, request, *args, **kwargs):
-        try :
-            pk=self.kwargs.get('pk')
+        try:
+            pk = self.kwargs.get('pk')
             app = Appointment.objects.get(pk=pk)
             #### send notification to special 
             specialname = app.specialist.user.username
@@ -342,21 +316,18 @@ class Appointment_pk (generics.DestroyAPIView) :
             starttime = app.start
             endtime = app.end
             msg = f'{patientname} has cancel appiment in {app.date} at {starttime} to {endtime}'
-            UserComponent.sendNotification(msg= msg, title='booking cancel' , token=special_fcm_token)
-
+            UserComponent.sendNotification(msg=msg, title='booking cancel', token=special_fcm_token)
 
             app.delete()
             return Response(special_fcm_token)
-        except : 
+        except:
             return Response('error')
 
 
+class AddFcmToken(generics.CreateAPIView):
 
-
-class AddFcmToken (generics.CreateAPIView):
-
-    def post (self, request, *args, **kwargs):
-        try :
+    def post(self, request, *args, **kwargs):
+        try:
             id = request.data['id']
             token = request.data['token']
 
@@ -364,91 +335,70 @@ class AddFcmToken (generics.CreateAPIView):
             user.fcm_token = token
             user.save()
             return Response('ok')
-        except :
+        except:
             return Response('error')
 
 
 from django.db.models import Avg
-class Recommendation (generics.CreateAPIView) :
+
+
+class Recommendation(generics.CreateAPIView):
     serializer_class = ReadSpecialistSerializer
 
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
 
-    #ordering_fields = ['']
+    # ordering_fields = ['']
     ordering = ['user__username']
-    def post (self, request, *args, **kwargs): 
+
+    def post(self, request, *args, **kwargs):
         id = request.data['id']
-        patient = PatientProfile.objects.get(id = id)
+        patient = PatientProfile.objects.get(id=id)
         ill = patient.chronic_illness.all()
         ill = ill[0].special_type
 
-        #ChronicIllness.objects.get(name = ill[0])
+        # ChronicIllness.objects.get(name = ill[0])
         print(ill)
         city = patient.user.city
 
         list1 = SpecialistProfile.objects.all()
-        list2 = SpecialistProfile.objects.filter(user__city =city , medical_type = ill ).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
-        list1 = list1.exclude(user__city =city , medical_type = ill)
-        list3 = list1.filter(medical_type = ill).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
-        list1 = list1.exclude(medical_type = ill)
-        list4 = list1.filter(user__city = city).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
-        list1 = list1.exclude(user__city = city).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
+        list2 = SpecialistProfile.objects.filter(user__city=city, medical_type=ill).annotate(
+            avg_rating=Avg('rates__stars')).order_by('avg_rating')
+        list1 = list1.exclude(user__city=city, medical_type=ill)
+        list3 = list1.filter(medical_type=ill).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
+        list1 = list1.exclude(medical_type=ill)
+        list4 = list1.filter(user__city=city).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
+        list1 = list1.exclude(user__city=city).annotate(avg_rating=Avg('rates__stars')).order_by('avg_rating')
         print(list2)
         print(list3)
         print(list4)
-
-
-
-
 
         print(list2[0].user.username)
         return Response('ReadSpecialistSerializer(list4).data')
 
 
-
 class Notify(generics.ListCreateAPIView):
     serializer_class = NotificationSerializer
     queryset = Notification.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend , SearchFilter , OrderingFilter]
-    filterset_fields = ['user__email'] #go to home or not 
-    #search_fields = ['user__username']
-    #ordering_fields = ['created_at']
+    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ['user__email']  # go to home or not
+    # search_fields = ['user__username']
+    # ordering_fields = ['created_at']
     ordering = ['-created_at']
 
-
-    def post (self, request, *args, **kwargs)  :
+    def post(self, request, *args, **kwargs):
         user = request.data['user']
         msg = request.data['msg']
         title = request.data['title']
-        user = User.objects.get(id = user)
-        notification = Notification(user = user , msg = msg  , title = title)
+        user = User.objects.get(id=user)
+        notification = Notification(user=user, msg=msg, title=title)
         notification.save()
         return Response(NotificationSerializer(notification).data)
 
 
-class Notify_delete (generics.DestroyAPIView) :
-    def delete(self, request, *args, **kwargs) :
+class Notify_delete(generics.DestroyAPIView):
+    def delete(self, request, *args, **kwargs):
         user = request.data['user']
-        user = User.objects.get(id= user)
+        user = User.objects.get(id=user)
         notification = Notification.objects.filter(user=user)
         notification.delete()
         return Response('its deleted')
-
-
-
-        
-
-
-
-
-
-
-        
-
-
-
-
-    
-
-
-
