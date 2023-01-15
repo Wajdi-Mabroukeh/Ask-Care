@@ -1,7 +1,6 @@
 .pyc
 *.sqlite
 settings/local.py
-*.sqlite3
 .idea
 media
 .DS_Store
@@ -67,7 +66,7 @@ pip-delete-this-directory.txt
 
 # Django stuff:
 *.log
-db.sqlite3
+
 
 # Environments
 .env
