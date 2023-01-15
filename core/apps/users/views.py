@@ -402,3 +402,10 @@ class Notify_delete(generics.DestroyAPIView):
         notification = Notification.objects.filter(user=user)
         notification.delete()
         return Response('its deleted')
+
+
+class HealthCheckAPI(generics.RetrieveAPIView):
+    permission_classes = (AllowAny,)
+
+    def retrieve(self, request, *args, **kwargs):
+        return Response({"response": "API is working successfully."}, 200)
